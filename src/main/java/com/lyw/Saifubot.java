@@ -3,13 +3,11 @@ package com.lyw;
 import com.lyw.bo.Idiom;
 import com.lyw.core.IdiomFollow;
 import com.sobte.cqp.jcq.entity.CQDebug;
-import com.sobte.cqp.jcq.entity.ICQVer;
 import com.sobte.cqp.jcq.entity.IMsg;
-import com.sobte.cqp.jcq.entity.IRequest;
 
 import java.util.List;
 
-public class Saifubot extends SaifuAppAbstract implements ICQVer, IMsg, IRequest {
+public class Saifubot extends SaifuAppAbstract {
 
     private IdiomFollow idiomFollow;
 

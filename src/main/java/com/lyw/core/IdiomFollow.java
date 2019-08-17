@@ -137,7 +137,7 @@ public class IdiomFollow {
                 if (top == end) {
                     List<Idiom> result = new ArrayList<>();
                     Idiom rev = end;
-                    while (rev != start) {
+                    while (rev != null) {
                         result.add(0, rev);
                         rev = visited.get(rev);
                     }
