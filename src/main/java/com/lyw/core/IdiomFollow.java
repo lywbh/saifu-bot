@@ -95,18 +95,52 @@ public class IdiomFollow {
     }
 
     /**
+     * 判断词典中有无该词
+     */
+    public boolean isIdiom(String word) {
+        return idiomBook.containsKey(word);
+    }
+
+    /**
+     * 随机获取一个接龙词
+     */
+    public Idiom getIdiom() {
+        String key = RandomUtils.randomFromCollection(idiomBook.keySet());
+        return idiomBook.get(key);
+    }
+
+    /**
      * 随机获取一个接龙词
      */
     public Idiom getIdiom(String startWord) {
-        Idiom idiomStart = idiomBook.get(startWord);
-        if (idiomStart == null) {
-            return null;
-        }
-        Set<Idiom> nextSet = idiomStart.getNext();
+        Set<Idiom> nextSet = getAllIdiom(startWord);
         if (nextSet.isEmpty()) {
             return null;
         }
         return RandomUtils.randomFromCollection(nextSet);
+    }
+
+    /**
+     * 随机获取一个接龙词，排除某些成语
+     */
+    public Idiom getIdiom(String startWord, Set<String> exclude) {
+        Set<Idiom> nextSet = getAllIdiom(startWord);
+        if (nextSet.isEmpty()) {
+            return null;
+        }
+        nextSet.removeIf(idiom -> exclude.stream().anyMatch(word -> word.equals(idiom.getWord())));
+        return RandomUtils.randomFromCollection(nextSet);
+    }
+
+    /**
+     * 获取所有接龙词
+     */
+    public Set<Idiom> getAllIdiom(String startWord) {
+        Idiom idiomStart = idiomBook.get(startWord);
+        if (idiomStart == null) {
+            return null;
+        }
+        return idiomStart.getNext();
     }
 
     /**
