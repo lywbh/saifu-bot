@@ -13,9 +13,9 @@ public class Saifubot extends SaifuAppAbstract {
     private IdiomFollow idiomFollow;
 
     public int startup() {
-        CQ.logInfo("App Info", "初始化成语词典...");
+        CQ.logInfo("saifu-bot", "初始化成语词典...");
         idiomFollow = IdiomFollow.getInstance();
-        CQ.logInfo("App Info", "初始化完毕");
+        CQ.logInfo("saifu-bot", "初始化完毕");
         return 0;
     }
 

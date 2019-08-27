@@ -72,7 +72,7 @@ public class IdiomFollow {
             response = httpClient.execute(new HttpGet(idiomUrl));
             return EntityUtils.toString(response.getEntity());
         } catch (IOException e) {
-            JcqApp.CQ.logError("Internal Error", e.getMessage());
+            JcqApp.CQ.logError("saifu-bot", e.getMessage());
             return null;
         } finally {
             try {
@@ -83,7 +83,7 @@ public class IdiomFollow {
                     response.close();
                 }
             } catch (IOException e) {
-                JcqApp.CQ.logError("Internal Error", e.getMessage());
+                JcqApp.CQ.logError("saifu-bot", e.getMessage());
             }
         }
     }
@@ -156,7 +156,6 @@ public class IdiomFollow {
         Idiom idiomStart = idiomBook.get(startWord);
         Idiom idiomEnd = idiomBook.get(endWord);
         if (idiomStart == null || idiomEnd == null) {
-            JcqApp.CQ.logInfo("App Info", "[" + startWord + "]或[" + endWord + "]在词典中不存在");
             return new ArrayList<>();
         }
         return BFS(idiomStart, idiomEnd, new HashMap<>());

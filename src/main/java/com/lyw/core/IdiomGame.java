@@ -77,7 +77,7 @@ public class IdiomGame implements Runnable {
                         }
                     }
                 } catch (Exception e) {
-                    JcqApp.CQ.logError("Internal Error", e.getMessage());
+                    JcqApp.CQ.logError("saifu-bot", e.getMessage());
                 }
             }
         }
