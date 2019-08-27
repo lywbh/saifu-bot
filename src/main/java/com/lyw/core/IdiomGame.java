@@ -40,11 +40,9 @@ public class IdiomGame implements Runnable {
         JcqApp.CQ.sendGroupMsg(groupId, next.getWord());
     }
 
-    public void setMessage(String message) {
-        synchronized (this) {
-            this.message = message;
-            this.notify();
-        }
+    public synchronized void setMessage(String message) {
+        this.message = message;
+        notify();
     }
 
     @Override
@@ -52,7 +50,7 @@ public class IdiomGame implements Runnable {
         while (true) {
             try {
                 synchronized (this) {
-                    this.wait();
+                    wait();
                     if (message.equals("!游戏结束")) {
                         GameStatus.endGame(groupId);
                         JcqApp.CQ.sendGroupMsg(groupId, "游戏已结束~");
