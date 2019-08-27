@@ -48,8 +48,8 @@ public class IdiomGame implements Runnable {
     @Override
     public void run() {
         while (true) {
-            try {
-                synchronized (this) {
+            synchronized (this) {
+                try {
                     wait();
                     if (message.equals("!游戏结束")) {
                         GameStatus.endGame(groupId);
@@ -76,9 +76,9 @@ public class IdiomGame implements Runnable {
                             }
                         }
                     }
+                } catch (Exception e) {
+                    JcqApp.CQ.logError("App Info", e.getMessage());
                 }
-            } catch (Exception e) {
-                JcqApp.CQ.logError("App Info", e.getMessage());
             }
         }
     }
