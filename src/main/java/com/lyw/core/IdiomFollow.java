@@ -18,6 +18,12 @@ public class IdiomFollow {
 
     private Map<String, Idiom> idiomBook;
 
+    private static IdiomFollow instance = new IdiomFollow();
+
+    public static IdiomFollow getInstance() {
+        return instance;
+    }
+
     /**
      * 初始化词典
      */
@@ -102,7 +108,7 @@ public class IdiomFollow {
     }
 
     /**
-     * 随机获取一个接龙词
+     * 随机获取一个成语
      */
     public Idiom getIdiom() {
         String key = RandomUtils.randomFromCollection(idiomBook.keySet());
