@@ -17,8 +17,8 @@ public class GameStatus {
         return GAME_MAP.get(groupId);
     }
 
-    public static void startGame(long groupId) {
-        GAME_MAP.put(groupId, new IdiomGame(groupId));
+    public static void startGame(long groupId, IdiomGame game) {
+        GAME_MAP.put(groupId, game);
     }
 
     public static void endGame(long groupId) {

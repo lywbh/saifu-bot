@@ -16,8 +16,6 @@ import java.util.*;
 
 public class IdiomFollow {
 
-    private Map<String, Idiom> idiomBook;
-
     private static IdiomFollow instance = new IdiomFollow();
 
     public static IdiomFollow getInstance() {
@@ -25,12 +23,17 @@ public class IdiomFollow {
     }
 
     /**
+     * 词典，包含成语之间的接龙关系图
+     */
+    private Map<String, Idiom> idiomBook;
+
+    /**
      * 初始化词典
      */
-    public IdiomFollow() {
+    private IdiomFollow() {
         String bookStr = fetchBook("http://cdn.jsdelivr.net/gh/pwxcoo/chinese-xinhua/data/idiom.json");
         if (bookStr == null) {
-            System.out.println("获取成语词典异常");
+            JcqApp.CQ.logError("saifu-bot", "获取成语词典异常");
             return;
         }
         // 存到内存中的哈希表里
@@ -62,7 +65,7 @@ public class IdiomFollow {
     }
 
     /**
-     * 获取成语词典
+     * 获取网络成语词典
      */
     private String fetchBook(String idiomUrl) {
         CloseableHttpClient httpClient = null;
@@ -101,13 +104,6 @@ public class IdiomFollow {
     }
 
     /**
-     * 判断词典中有无该词
-     */
-    public boolean isIdiom(String word) {
-        return idiomBook.containsKey(word);
-    }
-
-    /**
      * 随机获取一个成语
      */
     public Idiom getIdiom() {
@@ -134,7 +130,7 @@ public class IdiomFollow {
         if (nextSet.isEmpty()) {
             return null;
         }
-        nextSet.removeIf(idiom -> exclude.stream().anyMatch(word -> word.equals(idiom.getWord())));
+        nextSet.removeIf(idiom -> exclude.contains(idiom.getWord()));
         return RandomUtils.randomFromCollection(nextSet);
     }
 

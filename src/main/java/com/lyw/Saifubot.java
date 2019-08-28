@@ -3,6 +3,7 @@ package com.lyw;
 import com.lyw.bo.Idiom;
 import com.lyw.config.GameStatus;
 import com.lyw.core.IdiomFollow;
+import com.lyw.core.IdiomGame;
 import com.sobte.cqp.jcq.entity.CQDebug;
 import com.sobte.cqp.jcq.entity.IMsg;
 
@@ -27,7 +28,7 @@ public class Saifubot extends SaifuAppAbstract {
             GameStatus.getGame(fromGroup).setMessage(msg);
         } else {
             if (msg.equals("!成语接龙")) {
-                GameStatus.startGame(fromGroup);
+                IdiomGame.start(fromGroup);
             } else if (msg.startsWith("!查询")) {
                 String[] splitMsg = msg.split(" ");
                 if (splitMsg.length == 2) {
