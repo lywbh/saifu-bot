@@ -53,41 +53,39 @@ public class IdiomGame implements Runnable {
     }
 
     @Override
-    public void run() {
+    public synchronized void run() {
         GameStatus.startGame(groupId, this);
         Timer[] bgTasks = null;
         while (true) {
-            synchronized (this) {
-                if (bgTasks != null) {
-                    bgTasks[0].cancel();
-                    bgTasks[1].cancel();
+            if (bgTasks != null) {
+                bgTasks[0].cancel();
+                bgTasks[1].cancel();
+            }
+            bgTasks = counter(timeout);
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                JcqApp.CQ.logError("saifu-bot", e.getMessage());
+                break;
+            }
+            if (message.equals("!游戏结束")) {
+                JcqApp.CQ.sendGroupMsg(groupId, "游戏已结束");
+                break;
+            }
+            if (idiomFollow.getAllIdiom(currentIdiom())
+                    .stream().map(Idiom::getWord).anyMatch(word -> word.equals(message))) {
+                if (GAME_LIST.contains(message)) {
+                    JcqApp.CQ.sendGroupMsg(groupId, "[" + message + "]已经使用过了喔~");
+                    continue;
                 }
-                bgTasks = counter(timeout);
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    JcqApp.CQ.logError("saifu-bot", e.getMessage());
+                GAME_LIST.add(message);
+                Idiom next = idiomFollow.getIdiom(message, new HashSet<>(GAME_LIST));
+                if (next == null) {
+                    JcqApp.CQ.sendGroupMsg(groupId, "找不到接龙词，你赢了~");
                     break;
                 }
-                if (message.equals("!游戏结束")) {
-                    JcqApp.CQ.sendGroupMsg(groupId, "游戏已结束");
-                    break;
-                }
-                if (idiomFollow.getAllIdiom(currentIdiom())
-                        .stream().map(Idiom::getWord).anyMatch(word -> word.equals(message))) {
-                    if (GAME_LIST.contains(message)) {
-                        JcqApp.CQ.sendGroupMsg(groupId, "[" + message + "]已经使用过了喔~");
-                        continue;
-                    }
-                    GAME_LIST.add(message);
-                    Idiom next = idiomFollow.getIdiom(message, new HashSet<>(GAME_LIST));
-                    if (next == null) {
-                        JcqApp.CQ.sendGroupMsg(groupId, "找不到接龙词，你赢了~");
-                        break;
-                    }
-                    GAME_LIST.add(next.getWord());
-                    JcqApp.CQ.sendGroupMsg(groupId, next.getWord());
-                }
+                GAME_LIST.add(next.getWord());
+                JcqApp.CQ.sendGroupMsg(groupId, next.getWord());
             }
         }
         bgTasks[0].cancel();
