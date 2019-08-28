@@ -16,15 +16,24 @@ import java.util.*;
 
 public class IdiomFollow {
 
+    private static IdiomFollow instance = new IdiomFollow();
+
+    public static IdiomFollow getInstance() {
+        return instance;
+    }
+
+    /**
+     * 词典，包含成语之间的接龙关系图
+     */
     private Map<String, Idiom> idiomBook;
 
     /**
      * 初始化词典
      */
-    public IdiomFollow() {
+    private IdiomFollow() {
         String bookStr = fetchBook("http://cdn.jsdelivr.net/gh/pwxcoo/chinese-xinhua/data/idiom.json");
         if (bookStr == null) {
-            System.out.println("获取成语词典异常");
+            JcqApp.CQ.logError("saifu-bot", "获取成语词典异常");
             return;
         }
         // 存到内存中的哈希表里
@@ -56,7 +65,7 @@ public class IdiomFollow {
     }
 
     /**
-     * 获取成语词典
+     * 获取网络成语词典
      */
     private String fetchBook(String idiomUrl) {
         CloseableHttpClient httpClient = null;
@@ -66,7 +75,7 @@ public class IdiomFollow {
             response = httpClient.execute(new HttpGet(idiomUrl));
             return EntityUtils.toString(response.getEntity());
         } catch (IOException e) {
-            JcqApp.CQ.logError("Internal Error", e.getMessage());
+            JcqApp.CQ.logError("saifu-bot", e.getMessage());
             return null;
         } finally {
             try {
@@ -77,7 +86,7 @@ public class IdiomFollow {
                     response.close();
                 }
             } catch (IOException e) {
-                JcqApp.CQ.logError("Internal Error", e.getMessage());
+                JcqApp.CQ.logError("saifu-bot", e.getMessage());
             }
         }
     }
@@ -95,18 +104,45 @@ public class IdiomFollow {
     }
 
     /**
+     * 随机获取一个成语
+     */
+    public Idiom getIdiom() {
+        String key = RandomUtils.randomFromCollection(idiomBook.keySet());
+        return idiomBook.get(key);
+    }
+
+    /**
      * 随机获取一个接龙词
      */
     public Idiom getIdiom(String startWord) {
-        Idiom idiomStart = idiomBook.get(startWord);
-        if (idiomStart == null) {
-            return null;
-        }
-        Set<Idiom> nextSet = idiomStart.getNext();
+        Set<Idiom> nextSet = getAllIdiom(startWord);
         if (nextSet.isEmpty()) {
             return null;
         }
         return RandomUtils.randomFromCollection(nextSet);
+    }
+
+    /**
+     * 随机获取一个接龙词，排除某些成语
+     */
+    public Idiom getIdiom(String startWord, Set<String> exclude) {
+        Set<Idiom> nextSet = getAllIdiom(startWord);
+        if (nextSet.isEmpty()) {
+            return null;
+        }
+        nextSet.removeIf(idiom -> exclude.contains(idiom.getWord()));
+        return RandomUtils.randomFromCollection(nextSet);
+    }
+
+    /**
+     * 获取所有接龙词
+     */
+    public Set<Idiom> getAllIdiom(String startWord) {
+        Idiom idiomStart = idiomBook.get(startWord);
+        if (idiomStart == null) {
+            return null;
+        }
+        return idiomStart.getNext();
     }
 
     /**
@@ -116,7 +152,6 @@ public class IdiomFollow {
         Idiom idiomStart = idiomBook.get(startWord);
         Idiom idiomEnd = idiomBook.get(endWord);
         if (idiomStart == null || idiomEnd == null) {
-            JcqApp.CQ.logInfo("App Info", "[" + startWord + "]或[" + endWord + "]在词典中不存在");
             return new ArrayList<>();
         }
         return BFS(idiomStart, idiomEnd, new HashMap<>());
