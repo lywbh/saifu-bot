@@ -51,13 +51,9 @@ public class IdiomGame implements Runnable {
     private IdiomGame(long groupId) {
         this.idiomCollection = IdiomCollection.getInstance();
         this.GAME_LIST = new ArrayList<>();
-        this.message = null;
         this.groupId = groupId;
         this.timeout = 30000;
-        Idiom next = idiomCollection.getIdiom();
-        GAME_LIST.add(new GameNode(LocalConfig.ROBOT_QQ, next));
         ThreadPoolConfig.gamePool.submit(this);
-        JcqApp.CQ.sendGroupMsg(groupId, next.getWord());
     }
 
     public synchronized void setMessage(long qq, String message) {
@@ -69,6 +65,9 @@ public class IdiomGame implements Runnable {
     @Override
     public synchronized void run() {
         GameStatus.startGame(groupId, this);
+        Idiom first = idiomCollection.getIdiom();
+        GAME_LIST.add(new GameNode(LocalConfig.ROBOT_QQ, first));
+        JcqApp.CQ.sendGroupMsg(groupId, first.getWord());
         Timer[] bgTasks = null;
         while (true) {
             if (bgTasks != null) {
