@@ -35,6 +35,11 @@ public class IdiomGame implements Runnable {
     private final long timeout;
 
     /**
+     * 后台计时任务
+     */
+    private final Timer taskHalf, taskFull;
+
+    /**
      * 消息来源qq
      */
     private volatile long qq;
@@ -52,7 +57,9 @@ public class IdiomGame implements Runnable {
         this.idiomCollection = IdiomCollection.getInstance();
         this.GAME_LIST = new ArrayList<>();
         this.groupId = groupId;
-        this.timeout = 30000;
+        this.timeout = 30000L;
+        this.taskHalf = new Timer();
+        this.taskFull = new Timer();
         ThreadPoolConfig.gamePool.submit(this);
     }
 
@@ -68,13 +75,8 @@ public class IdiomGame implements Runnable {
         Idiom first = idiomCollection.getIdiom();
         GAME_LIST.add(new GameNode(LocalConfig.ROBOT_QQ, first));
         JcqApp.CQ.sendGroupMsg(groupId, first.getWord());
-        Timer[] bgTasks = null;
+        startCounter();
         while (true) {
-            if (bgTasks != null) {
-                bgTasks[0].cancel();
-                bgTasks[1].cancel();
-            }
-            bgTasks = counter(timeout);
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -90,6 +92,7 @@ public class IdiomGame implements Runnable {
                     JcqApp.CQ.sendGroupMsg(groupId, "[" + message + "]已经使用过了喔~");
                     continue;
                 }
+                resetCounter();
                 GAME_LIST.add(new GameNode(qq, idiomCollection.getIdiom(message)));
                 Idiom next = idiomCollection.getFollow(message,
                         GAME_LIST.stream().map(GameNode::getIdiom).collect(Collectors.toSet()));
@@ -101,8 +104,7 @@ public class IdiomGame implements Runnable {
                 JcqApp.CQ.sendGroupMsg(groupId, next.getWord());
             }
         }
-        bgTasks[0].cancel();
-        bgTasks[1].cancel();
+        cancelCounter();
         GameStatus.endGame(groupId);
         JcqApp.CQ.sendGroupMsg(groupId, buildGameResult());
     }
@@ -117,23 +119,33 @@ public class IdiomGame implements Runnable {
         return gameResult.toString();
     }
 
-    private Timer[] counter(long millis) {
-        Timer taskHalf = new Timer();
+    /**
+     * 后台计时器操作
+     */
+    private void startCounter() {
         taskHalf.schedule(new TimerTask() {
             @Override
             public void run() {
-                JcqApp.CQ.sendGroupMsg(groupId, "还剩" + millis / 2000 + "秒，当前成语是[" + currentIdiom() + "]");
+                JcqApp.CQ.sendGroupMsg(groupId, "还剩" + timeout / 2000 + "秒，当前成语是[" + currentIdiom() + "]");
             }
-        }, millis / 2);
-        Timer taskFull = new Timer();
+        }, timeout / 2);
         taskFull.schedule(new TimerTask() {
             @Override
             public void run() {
                 JcqApp.CQ.sendGroupMsg(groupId, "时间到~");
                 setMessage(LocalConfig.ROBOT_QQ, "!游戏结束");
             }
-        }, millis);
-        return new Timer[]{taskHalf, taskFull};
+        }, timeout);
+    }
+
+    private void cancelCounter() {
+        taskHalf.cancel();
+        taskFull.cancel();
+    }
+
+    private void resetCounter() {
+        cancelCounter();
+        startCounter();
     }
 
 }
