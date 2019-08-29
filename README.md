@@ -2,7 +2,8 @@
 
 ##### 基于酷Q的 [java sdk](https://github.com/Meowya/JCQ-CoolQ) 和 [成语词典](https://github.com/pwxcoo/chinese-xinhua)
 
-![sample](https://puu.sh/E4FTk/51fdd319e3.png)
+![sample](https://puu.sh/EaU63/bbc237c4ba.png)
+![sample](https://puu.sh/EaUai/b5576e1e62.png)
 
 ## Installation
 

@@ -1,53 +1,67 @@
 package com.lyw.core;
 
+import com.lyw.bo.GameNode;
 import com.lyw.bo.Idiom;
 import com.lyw.config.GameStatus;
+import com.lyw.config.LocalConfig;
 import com.lyw.config.ThreadPoolConfig;
 import com.sobte.cqp.jcq.event.JcqApp;
+import com.sobte.cqp.jcq.message.CQCode;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class IdiomGame implements Runnable {
 
-    private IdiomFollow idiomFollow;
+    private IdiomCollection idiomCollection;
 
     /**
-     * 保存当次游戏已使用的成语
+     * 保存当前游戏进度
      */
-    private volatile List<String> GAME_LIST;
+    private final List<GameNode> GAME_LIST;
+
+    private String currentIdiom() {
+        return GAME_LIST.get(GAME_LIST.size() - 1).getIdiom().getWord();
+    }
 
     /**
      * 群ID
      */
-    private long groupId;
-
-    /**
-     * 消息内容
-     */
-    private String message;
+    private final long groupId;
 
     /**
      * 游戏超时时间
      */
-    private long timeout;
+    private final long timeout;
+
+    /**
+     * 消息来源qq
+     */
+    private volatile long qq;
+
+    /**
+     * 消息内容
+     */
+    private volatile String message;
 
     public static void start(long groupId) {
         new IdiomGame(groupId);
     }
 
     private IdiomGame(long groupId) {
-        this.idiomFollow = IdiomFollow.getInstance();
+        this.idiomCollection = IdiomCollection.getInstance();
         this.GAME_LIST = new ArrayList<>();
         this.message = null;
         this.groupId = groupId;
         this.timeout = 30000;
-        Idiom next = idiomFollow.getIdiom();
-        GAME_LIST.add(next.getWord());
+        Idiom next = idiomCollection.getIdiom();
+        GAME_LIST.add(new GameNode(LocalConfig.ROBOT_QQ, next));
         ThreadPoolConfig.gamePool.submit(this);
         JcqApp.CQ.sendGroupMsg(groupId, next.getWord());
     }
 
-    public synchronized void setMessage(String message) {
+    public synchronized void setMessage(long qq, String message) {
+        this.qq = qq;
         this.message = message;
         notify();
     }
@@ -69,32 +83,39 @@ public class IdiomGame implements Runnable {
                 break;
             }
             if (message.equals("!游戏结束")) {
-                JcqApp.CQ.sendGroupMsg(groupId, "游戏已结束");
                 break;
             }
-            if (idiomFollow.getAllIdiom(currentIdiom())
+            if (idiomCollection.getAllFollow(currentIdiom())
                     .stream().map(Idiom::getWord).anyMatch(word -> word.equals(message))) {
-                if (GAME_LIST.contains(message)) {
+                if (GAME_LIST.stream().anyMatch(gameNode -> gameNode.getIdiom().getWord().equals(message))) {
                     JcqApp.CQ.sendGroupMsg(groupId, "[" + message + "]已经使用过了喔~");
                     continue;
                 }
-                GAME_LIST.add(message);
-                Idiom next = idiomFollow.getIdiom(message, new HashSet<>(GAME_LIST));
+                GAME_LIST.add(new GameNode(qq, idiomCollection.getIdiom(message)));
+                Idiom next = idiomCollection.getFollow(message,
+                        GAME_LIST.stream().map(GameNode::getIdiom).collect(Collectors.toSet()));
                 if (next == null) {
                     JcqApp.CQ.sendGroupMsg(groupId, "找不到接龙词，你赢了~");
                     break;
                 }
-                GAME_LIST.add(next.getWord());
+                GAME_LIST.add(new GameNode(LocalConfig.ROBOT_QQ, next));
                 JcqApp.CQ.sendGroupMsg(groupId, next.getWord());
             }
         }
         bgTasks[0].cancel();
         bgTasks[1].cancel();
         GameStatus.endGame(groupId);
+        JcqApp.CQ.sendGroupMsg(groupId, buildGameResult());
     }
 
-    private String currentIdiom() {
-        return GAME_LIST.get(GAME_LIST.size() - 1);
+    private String buildGameResult() {
+        StringBuilder gameResult = new StringBuilder("游戏成绩：\n");
+        Map<Long, List<GameNode>> resultCol = GAME_LIST.stream()
+                .filter(gameNode -> gameNode.getQq() != LocalConfig.ROBOT_QQ)
+                .collect(Collectors.groupingBy(GameNode::getQq));
+        resultCol.forEach((qq, idioms) -> gameResult.append(new CQCode().at(qq)).append(idioms.size()).append("\n"));
+        gameResult.append("发送[!成语接龙]重新开始游戏");
+        return gameResult.toString();
     }
 
     private Timer[] counter(long millis) {
@@ -110,7 +131,7 @@ public class IdiomGame implements Runnable {
             @Override
             public void run() {
                 JcqApp.CQ.sendGroupMsg(groupId, "时间到~");
-                setMessage("!游戏结束");
+                setMessage(LocalConfig.ROBOT_QQ, "!游戏结束");
             }
         }, millis);
         return new Timer[]{taskHalf, taskFull};

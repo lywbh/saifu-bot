@@ -14,11 +14,11 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.util.*;
 
-public class IdiomFollow {
+public class IdiomCollection {
 
-    private static IdiomFollow instance = new IdiomFollow();
+    private static IdiomCollection instance = new IdiomCollection();
 
-    public static IdiomFollow getInstance() {
+    public static IdiomCollection getInstance() {
         return instance;
     }
 
@@ -30,7 +30,7 @@ public class IdiomFollow {
     /**
      * 初始化词典
      */
-    private IdiomFollow() {
+    private IdiomCollection() {
         String bookStr = fetchBook("http://cdn.jsdelivr.net/gh/pwxcoo/chinese-xinhua/data/idiom.json");
         if (bookStr == null) {
             JcqApp.CQ.logError("saifu-bot", "获取成语词典异常");
@@ -112,10 +112,17 @@ public class IdiomFollow {
     }
 
     /**
+     * 根据字符串获取成语对象
+     */
+    public Idiom getIdiom(String idiomStr) {
+        return idiomBook.get(idiomStr);
+    }
+
+    /**
      * 随机获取一个接龙词
      */
-    public Idiom getIdiom(String startWord) {
-        Set<Idiom> nextSet = getAllIdiom(startWord);
+    public Idiom getFollow(String startWord) {
+        Set<Idiom> nextSet = getAllFollow(startWord);
         if (nextSet.isEmpty()) {
             return null;
         }
@@ -125,19 +132,19 @@ public class IdiomFollow {
     /**
      * 随机获取一个接龙词，排除某些成语
      */
-    public Idiom getIdiom(String startWord, Set<String> exclude) {
-        Set<Idiom> nextSet = getAllIdiom(startWord);
+    public Idiom getFollow(String startWord, Set<Idiom> exclude) {
+        Set<Idiom> nextSet = getAllFollow(startWord);
         if (nextSet.isEmpty()) {
             return null;
         }
-        nextSet.removeIf(idiom -> exclude.contains(idiom.getWord()));
+        nextSet.removeIf(exclude::contains);
         return RandomUtils.randomFromCollection(nextSet);
     }
 
     /**
      * 获取所有接龙词
      */
-    public Set<Idiom> getAllIdiom(String startWord) {
+    public Set<Idiom> getAllFollow(String startWord) {
         Idiom idiomStart = idiomBook.get(startWord);
         if (idiomStart == null) {
             return null;
@@ -148,7 +155,7 @@ public class IdiomFollow {
     /**
      * 最短路径算法找出接龙路径
      */
-    public List<Idiom> getIdiomChain(String startWord, String endWord) {
+    public List<Idiom> getFollowChain(String startWord, String endWord) {
         Idiom idiomStart = idiomBook.get(startWord);
         Idiom idiomEnd = idiomBook.get(endWord);
         if (idiomStart == null || idiomEnd == null) {
